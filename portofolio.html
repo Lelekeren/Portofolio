@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kinno</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:ital,wght@0,400;0,700;0,900;1,400&display=swap');
+
+        :root {
+            --red-p5: #E50000;
+            --black-bg: #0a0a0a;
+            --dark-grey: #1a1a1a;
+            --white-text: #f0f0f0;
+            --accent-zzz: #000000; /* Sentuhan kuning kecil ala ZZZ untuk kontras */
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        body {
+            background-color: var(--black-bg);
+            color: var(--white-text);
+            overflow: hidden; /* Sembunyikan scrollbar bawaan */
+        }
+
+        /* Container utama untuk efek Snap Scrolling */
+        .scroll-container {
+            height: 100vh;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+            scroll-behavior: smooth;
+        }
+
+        /* Sidebar Navigasi */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 250px;
+            background: var(--dark-grey);
+            clip-path: polygon(0 0, 100% 0, 85% 100%, 0% 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding-left: 2rem;
+            z-index: 100;
+            border-right: 5px solid var(--red-p5);
+            box-shadow: 10px 0 20px rgba(229, 0, 0, 0.2);
+        }
+
+        nav h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 4rem;
+            color: var(--red-p5);
+            margin-bottom: 2rem;
+            letter-spacing: 5px;
+            text-shadow: 2px 2px 0px #fff;
+            transform: skewX(-10deg);
+        }
+
+        nav a {
+            color: var(--white-text);
+            text-decoration: none;
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin: 1rem 0;
+            text-transform: uppercase;
+            position: relative;
+            transition: all 0.3s ease;
+            width: fit-content;
+        }
+
+        nav a::before {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 3px;
+            background-color: var(--red-p5);
+            transition: width 0.3s ease;
+        }
+
+        nav a:hover {
+            color: var(--red-p5);
+            transform: translateX(10px) skewX(-10deg);
+        }
+
+        nav a:hover::before {
+            width: 100%;
+        }
+
+        /* Section Global */
+        section {
+            height: 100vh;
+            width: 100vw;
+            padding-left: 300px; /* Space untuk sidebar */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            scroll-snap-align: start;
+            position: relative;
+            background-image: radial-gradient(circle at 10% 20%, rgba(229, 0, 0, 0.05) 0%, transparent 50%);
+        }
+
+        /* Pola Halftone ala Persona */
+        .halftone-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(var(--dark-grey) 2px, transparent 2px);
+            background-size: 10px 10px;
+            opacity: 0.3;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        h2.section-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 5rem;
+            color: var(--white-text);
+            margin-bottom: 1rem;
+            position: relative;
+            display: inline-block;
+            transform: skewX(-5deg);
+        }
+
+        h2.section-title::after {
+            content: '';
+            position: absolute;
+            left: -10px;
+            bottom: 10px;
+            width: calc(100% + 20px);
+            height: 30%;
+            background-color: var(--red-p5);
+            z-index: -1;
+            transform: skewX(-15deg);
+        }
+
+        /* Animasi Muncul (Intersection Observer) */
+        .hidden {
+            opacity: 0;
+            transform: translateY(50px) skewY(2deg);
+            transition: all 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .show {
+            opacity: 1;
+            transform: translateY(0) skewY(0);
+        }
+
+        /* Tab: My Art */
+        .art-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            width: 90%;
+            max-height: 60vh;
+            overflow-y: auto;
+            padding-right: 15px;
+        }
+
+        /* Custom Scrollbar untuk grid art */
+        .art-grid::-webkit-scrollbar { width: 8px; }
+        .art-grid::-webkit-scrollbar-track { background: var(--dark-grey); }
+        .art-grid::-webkit-scrollbar-thumb { background: var(--red-p5); }
+
+        .art-item {
+            width: 100%;
+            aspect-ratio: 1/1;
+            background-color: var(--dark-grey);
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            clip-path: polygon(5% 0, 100% 0, 95% 100%, 0% 100%); /* Potongan ZZZ */
+        }
+
+        .art-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .art-item:hover {
+            border-color: var(--red-p5);
+            transform: scale(1.05);
+            z-index: 2;
+        }
+
+        .art-item:hover img {
+            transform: scale(1.1);
+            filter: grayscale(0%) contrast(120%);
+        }
+
+        /* Tab: Commission */
+        .commission-box {
+            background: var(--dark-grey);
+            padding: 3rem;
+            border-left: 10px solid var(--red-p5);
+            width: 70%;
+            transform: skewX(-5deg);
+        }
+
+        .commission-box p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            transform: skewX(5deg); /* Mengembalikan teks agar mudah dibaca */
+        }
+
+        .btn-vgen {
+            display: inline-block;
+            background-color: var(--red-p5);
+            color: #fff;
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            font-weight: 900;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+            transition: all 0.3s ease;
+            transform: skewX(5deg);
+        }
+
+        .btn-vgen:hover {
+            background-color: #fff;
+            color: var(--red-p5);
+            box-shadow: 0 0 20px rgba(229, 0, 0, 0.8);
+            transform: skewX(5deg) scale(1.05);
+        }
+
+        /* Tab: Social Media & Things I'm doing */
+        .info-list {
+            list-style: none;
+        }
+
+        .info-list li {
+            font-size: 2rem;
+            margin: 1.5rem 0;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+        }
+
+        .info-list a {
+            color: var(--white-text);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .info-list a:hover {
+            color: var(--red-p5);
+            text-shadow: 2px 2px 0px var(--accent-zzz);
+        }
+
+        .info-list span {
+            color: var(--red-p5);
+            margin-right: 15px;
+        }
+
+        /* Dekorasi tambahan ZZZ */
+        .decor-line {
+            position: absolute;
+            bottom: 50px;
+            right: -50px;
+            width: 300px;
+            height: 20px;
+            background: repeating-linear-gradient(
+                45deg,
+                var(--red-p5),
+                var(--red-p5) 10px,
+                var(--dark-grey) 10px,
+                var(--dark-grey) 20px
+            );
+            transform: rotate(-45deg);
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <h1>KINNO</h1>
+        <a href="#my-art">My Art</a>
+        <a href="#things-doing">Activity</a>
+        <a href="#commission">Commission</a>
+        <a href="#social-media">Social Media</a>
+    </nav>
+
+    <div class="scroll-container">
+        <!-- My Art Section -->
+        <section id="my-art">
+            <div class="halftone-bg"></div>
+            <div class="decor-line"></div>
+            <h2 class="section-title hidden">PORTFOLIO</h2>
+            <div class="art-grid hidden">
+                <!-- Ganti src dengan link gambar dari instagram kamu -->
+                <div class="art-item"><img src="D:\joker.webp" alt="Kinno Art"></div>
+                <div class="art-item"><img src="D:\pns.webp" alt="Kinno Art"></div>
+                <div class="art-item"><img src="D:\kei.jpg" alt="Kinno Art"></div>
+                <div class="art-item"><img src="D:\teto.webp" alt="Kinno Art"></div>
+                <div class="art-item"><img src="D:\rundy.webp" alt="Kinno Art"></div>
+                <div class="art-item"><img src="D:\p.webp" alt="Kinno Art"></div>
+                <div class="art-item"><img src="D:\njir.jpg" alt="Kinno Art"></div>
+                <div class="art-item"><img src="D:\nopikk.webp"></div>
+            </div>
+        </section>
+
+        <!-- Things I'm Doing Section -->
+        <section id="things-doing">
+            <div class="halftone-bg"></div>
+            <h2 class="section-title hidden">Recent Activity</h2>
+            <ul class="info-list hidden">
+                <li><span>/></span> Working on Personal Art Projects</li>
+                <li><span>/></span> Making Meme </li>
+                <li><span>/></span> Voice Acting Practice & Recording</li>
+            </ul>
+        </section>
+
+        <!-- Commission Section -->
+        <section id="commission">
+            <div class="halftone-bg"></div>
+            <h2 class="section-title hidden">COMMISSION ME</h2>
+            <div class="commission-box hidden">
+                <p>Ready to bring your ideas to life? My commissions are currently open. Click the button below to view my prices, terms of service, and to request a slot directly via VGen.</p>
+                <a href="https://vgen.co/Kinno_arts" target="_blank" class="btn-vgen">OPEN VGEN</a>
+            </div>
+        </section>
+
+        <!-- Social Media Section -->
+        <section id="social-media">
+            <div class="halftone-bg"></div>
+            <div class="decor-line" style="bottom: auto; top: 50px; right: 50px;"></div>
+            <h2 class="section-title hidden">Social media</h2>
+            <ul class="info-list hidden">
+                <li><span>IG ART:</span> <a href="https://instagram.com/kinno_arts" target="_blank">@kinno_arts</a></li>
+                <li><span>IG VA:</span> <a href="https://instagram.com/kinno_no" target="_blank">@kinno_no</a></li>
+            </ul>
+        </section>
+    </div>
+
+    <script>
+        // Intersection Observer untuk animasi reveal ala P5/ZZZ
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('show');
+                } else {
+                    // Hapus kelas 'show' jika ingin animasi berulang saat di-scroll naik-turun
+                    entry.target.classList.remove('show');
+                }
+            });
+        }, {
+            threshold: 0.1 // Memicu animasi ketika 10% elemen terlihat
+        });
+
+        const hiddenElements = document.querySelectorAll('.hidden');
+        hiddenElements.forEach((el) => observer.observe(el));
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kinno | Portfolio</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:ital,wght@0,400;0,700;0,900;1,400&display=swap');
+
+        :root {
+            --red-p5: #E50000;
+            --black-bg: #050505;
+            --dark-grey: #121212;
+            --silver: #D3D3D3; /* Aksen Silver Baru */
+            --white-text: #f0f0f0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        body {
+            background-color: var(--black-bg);
+            color: var(--white-text);
+            overflow: hidden; 
+        }
+
+        /* Container utama */
+        .scroll-container {
+            height: 100vh;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+            scroll-behavior: smooth;
+            position: relative;
+        }
+
+        /* Ticker Tape Background (Gaya Jet Set Radio) */
+        .ticker-tape {
+            position: absolute;
+            width: 200vw;
+            height: 50px;
+            background: var(--silver);
+            color: var(--black-bg);
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem;
+            line-height: 50px;
+            letter-spacing: 5px;
+            transform: rotate(-10deg) translateY(-50%);
+            top: 30%;
+            left: -50vw;
+            z-index: -1;
+            white-space: nowrap;
+            overflow: hidden;
+            display: flex;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            opacity: 0.6;
+        }
+        .ticker-tape.red {
+            background: var(--red-p5);
+            color: var(--white-text);
+            transform: rotate(5deg) translateY(-50%);
+            top: 70%;
+            opacity: 0.4;
+        }
+        .ticker-content {
+            display: inline-block;
+            padding-left: 100%;
+            animation: marquee 20s linear infinite;
+        }
+        @keyframes marquee {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-100%, 0); }
+        }
+
+        /* Sidebar Navigasi */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 280px;
+            background: var(--dark-grey);
+            clip-path: polygon(0 0, 100% 0, 85% 100%, 0% 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding-left: 2rem;
+            z-index: 100;
+            border-right: 8px solid var(--silver); /* Border silver */
+            box-shadow: 15px 0 30px rgba(229, 0, 0, 0.3);
+        }
+
+        nav::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 10px;
+            height: 100%;
+            background: var(--red-p5);
+            clip-path: polygon(0 0, 100% 0, 0 100%);
+        }
+
+        nav h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 4.5rem;
+            color: var(--white-text);
+            margin-bottom: 2rem;
+            letter-spacing: 5px;
+            text-shadow: 4px 4px 0px var(--red-p5); /* Shadow khas P5 */
+            transform: skewX(-10deg) rotate(-5deg);
+        }
+
+        nav a {
+            color: var(--silver);
+            text-decoration: none;
+            font-size: 1.3rem;
+            font-weight: 900;
+            margin: 1rem 0;
+            text-transform: uppercase;
+            position: relative;
+            transition: all 0.3s ease;
+            width: fit-content;
+        }
+
+        nav a::before {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 4px;
+            background-color: var(--red-p5);
+            transition: width 0.3s ease;
+        }
+
+        nav a:hover {
+            color: var(--white-text);
+            transform: translateX(15px) skewX(-10deg);
+            text-shadow: 2px 2px 0 var(--red-p5);
+        }
+
+        nav a:hover::before {
+            width: 100%;
+        }
+
+        /* Section Global */
+        section {
+            height: 100vh;
+            width: 100vw;
+            padding-left: 320px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            scroll-snap-align: start;
+            position: relative;
+            overflow: hidden; /* Agar elemen dekorasi tidak keluar jalur */
+        }
+
+        /* Halftone Hitam Merah yang Lebih "Nendang" */
+        .halftone-bg {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-image: 
+                radial-gradient(var(--red-p5) 2px, transparent 2px),
+                radial-gradient(var(--dark-grey) 3px, transparent 3px);
+            background-size: 16px 16px, 24px 24px;
+            background-position: 0 0, 12px 12px;
+            opacity: 0.15;
+            z-index: -2;
+            pointer-events: none;
+        }
+
+        /* Spinning Stars CSS */
+        .star-accent {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background: var(--red-p5);
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+            animation: spin 10s linear infinite;
+            z-index: -1;
+            opacity: 0.8;
+        }
+        .star-accent.silver {
+            background: var(--silver);
+            width: 50px;
+            height: 50px;
+            animation-duration: 15s;
+            animation-direction: reverse;
+            opacity: 0.5;
+        }
+
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+
+        h2.section-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 6rem;
+            color: var(--white-text);
+            margin-bottom: 1rem;
+            position: relative;
+            display: inline-block;
+            transform: skewX(-8deg);
+            text-shadow: 3px 3px 0 var(--dark-grey);
+        }
+
+        h2.section-title::after {
+            content: '';
+            position: absolute;
+            left: -15px;
+            bottom: 15px;
+            width: calc(100% + 30px);
+            height: 40%;
+            background-color: var(--red-p5);
+            z-index: -1;
+            transform: skewX(-15deg);
+        }
+
+        /* Animasi Muncul */
+        .hidden {
+            opacity: 0;
+            transform: translateY(50px) skewY(2deg);
+            transition: all 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        .show {
+            opacity: 1;
+            transform: translateY(0) skewY(0);
+        }
+
+        /* Tab: My Art */
+        .art-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            width: 90%;
+            max-height: 60vh;
+            overflow-y: auto;
+            padding-right: 15px;
+            z-index: 2;
+        }
+
+        .art-grid::-webkit-scrollbar { width: 10px; }
+        .art-grid::-webkit-scrollbar-track { background: var(--dark-grey); border: 1px solid var(--silver); }
+        .art-grid::-webkit-scrollbar-thumb { background: var(--red-p5); }
+
+        .art-item {
+            width: 100%;
+            aspect-ratio: 1/1;
+            background-color: var(--dark-grey);
+            border: 3px solid var(--silver);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0% 100%); /* Bentuk Jajar Genjang ZZZ */
+        }
+
+        .art-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+            filter: grayscale(40%); /* Biar dramatis, lalu nyala pas hover */
+        }
+
+        .art-item:hover {
+            border-color: var(--red-p5);
+            transform: scale(1.05) skewX(-2deg);
+            z-index: 5;
+            box-shadow: 5px 5px 0 var(--red-p5);
+        }
+
+        .art-item:hover img {
+            transform: scale(1.1);
+            filter: grayscale(0%) contrast(110%);
+        }
+
+        /* Tab: Commission */
+        .commission-box {
+            background: var(--dark-grey);
+            padding: 3rem;
+            border: 4px solid var(--silver);
+            border-left: 15px solid var(--red-p5);
+            width: 70%;
+            transform: skewX(-5deg);
+            position: relative;
+            z-index: 2;
+            box-shadow: 10px 10px 0px rgba(229, 0, 0, 0.2);
+        }
+
+        .commission-box p {
+            font-size: 1.3rem;
+            margin-bottom: 2rem;
+            transform: skewX(5deg);
+            font-weight: 700;
+        }
+
+        .btn-vgen {
+            display: inline-block;
+            background-color: var(--red-p5);
+            color: #fff;
+            padding: 15px 50px;
+            font-size: 1.8rem;
+            font-weight: 900;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            clip-path: polygon(15px 0, 100% 0, calc(100% - 15px) 100%, 0 100%);
+            transition: all 0.3s ease;
+            transform: skewX(5deg);
+            border: 2px solid transparent;
+        }
+
+        .btn-vgen:hover {
+            background-color: var(--black-bg);
+            color: var(--silver);
+            border-color: var(--red-p5);
+            box-shadow: -5px 5px 0 var(--red-p5);
+            transform: skewX(5deg) scale(1.05) translateY(-5px);
+        }
+
+        /* Tab: Social Media & Activity */
+        .info-list {
+            list-style: none;
+            z-index: 2;
+        }
+
+        .info-list li {
+            font-size: 2.2rem;
+            margin: 1.5rem 0;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            text-transform: uppercase;
+            transform: skewX(-5deg);
+            transition: transform 0.3s ease;
+        }
+
+        .info-list li:hover {
+            transform: skewX(-5deg) translateX(20px);
+        }
+
+        .info-list a {
+            color: var(--silver);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            background: var(--dark-grey);
+            padding: 5px 15px;
+            border: 2px solid transparent;
+        }
+
+        .info-list a:hover {
+            color: var(--white-text);
+            background: var(--red-p5);
+            border-color: var(--silver);
+            box-shadow: 4px 4px 0 var(--silver);
+        }
+
+        .info-list span {
+            color: var(--red-p5);
+            margin-right: 15px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 3rem;
+            text-shadow: 2px 2px 0 var(--silver);
+        }
+
+        /* Dekorasi Tambahan */
+        .decor-line {
+            position: absolute;
+            bottom: 10%;
+            right: -5%;
+            width: 400px;
+            height: 30px;
+            background: repeating-linear-gradient(
+                45deg,
+                var(--silver),
+                var(--silver) 10px,
+                var(--dark-grey) 10px,
+                var(--dark-grey) 20px
+            );
+            transform: rotate(-35deg);
+            z-index: 1;
+            box-shadow: 0 0 10px rgba(0,0,0,0.8);
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <h1>KINNO</h1>
+        <a href="#my-art">My Art</a>
+        <a href="#things-doing">Activity</a>
+        <a href="#commission">Commission</a>
+        <a href="#social-media">Social Media</a>
+    </nav>
+
+    <div class="scroll-container">
+        
+        <!-- Background Pita Berjalan Global -->
+        <div class="ticker-tape">
+            <div class="ticker-content">
+                KINNO ARTWORK // DESIGN // VOICE ACTING // KINNO ARTWORK // DESIGN // VOICE ACTING //
+            </div>
+        </div>
+        <div class="ticker-tape red">
+            <div class="ticker-content">
+                CAUTION // W.I.P // CREATIVE PROCESS // CAUTION // W.I.P // CREATIVE PROCESS //
+            </div>
+        </div>
+
+        <!-- My Art Section -->
+        <section id="my-art">
+            <div class="halftone-bg"></div>
+            <!-- Bintang Berputar -->
+            <div class="star-accent" style="top: 15%; right: 10%;"></div>
+            <div class="star-accent silver" style="bottom: 20%; right: 25%;"></div>
+            
+            <div class="decor-line"></div>
+            <h2 class="section-title hidden">PORTFOLIO</h2>
+            <div class="art-grid hidden">
+                <div class="art-item"><img src="D:\joker.webp" alt="Kinno Art"></div>
+                <div class="art-item"><img src="D:\pns.webp" alt="Kinno Art"></div>
+                <div class="art-item"><img src="D:\kei.jpg" alt="Kinno Art"></div>
+                <div class="art-item"><img src="D:\teto.webp" alt="Kinno Art"></div>
+                <div class="art-item"><img src="D:\rundy.webp" alt="Kinno Art"></div>
+                <div class="art-item"><img src="D:\p.webp" alt="Kinno Art"></div>
+                <div class="art-item"><img src="D:\njir.jpg" alt="Kinno Art"></div>
+                <div class="art-item"><img src="D:\nopikk.webp" alt="Kinno Art"></div>
+            </div>
+        </section>
+
+        <!-- Things I'm Doing Section -->
+        <section id="things-doing">
+            <div class="halftone-bg"></div>
+            <div class="star-accent silver" style="top: 10%; right: 40%;"></div>
+            
+            <h2 class="section-title hidden">Recent Activity</h2>
+            <ul class="info-list hidden">
+                <li><span>/></span> Working on Personal Art</li>
+                <li><span>/></span> Making Memes</li>
+                <li><span>/></span> Voice Acting Practice</li>
+            </ul>
+        </section>
+
+        <!-- Commission Section -->
+        <section id="commission">
+            <div class="halftone-bg"></div>
+            <div class="star-accent" style="bottom: 10%; left: 35%;"></div>
+            <div class="star-accent silver" style="top: 20%; right: 15%;"></div>
+
+            <h2 class="section-title hidden">COMMISSION ME</h2>
+            <div class="commission-box hidden">
+                <p>Ready to bring your ideas to life? My commissions are currently open. Click the button below to view my prices, terms of service, and to request a slot directly via VGen.</p>
+                <a href="https://vgen.co/Kinno_arts" target="_blank" class="btn-vgen">OPEN VGEN</a>
+            </div>
+        </section>
+
+        <!-- Social Media Section -->
+        <section id="social-media">
+            <div class="halftone-bg"></div>
+            <div class="star-accent" style="top: 15%; right: 20%;"></div>
+            
+            <div class="decor-line" style="bottom: auto; top: 15%; right: 5%; transform: rotate(45deg);"></div>
+            <h2 class="section-title hidden">Social media</h2>
+            <ul class="info-list hidden">
+                <li><span>IG ART</span> <a href="https://instagram.com/kinno_arts" target="_blank">@kinno_arts</a></li>
+                <li><span>IG VA</span> <a href="https://instagram.com/kinno_no" target="_blank">@kinno_no</a></li>
+            </ul>
+        </section>
+    </div>
+
+    <script>
+        // Intersection Observer
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('show');
+                } else {
+                    entry.target.classList.remove('show');
+                }
+            });
+        }, {
+            threshold: 0.1 
+        });
+
+        const hiddenElements = document.querySelectorAll('.hidden');
+        hiddenElements.forEach((el) => observer.observe(el));
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kinno | Portfolio</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:ital,wght@0,400;0,700;0,900;1,400&display=swap');
+
+        :root {
+            --red-p5: #E50000;
+            --black-bg: #050505;
+            --dark-grey: #121212;
+            --silver: #D3D3D3; 
+            --white-text: #f0f0f0;
+            --yellow-zzz: #FFD700;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        body {
+            background-color: var(--black-bg);
+            color: var(--white-text);
+            overflow: hidden; 
+            position: relative;
+        }
+
+        /* Overlay Scanlines & Vibe */
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            background-size: 100% 3px, 2px 100%;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        .scroll-container {
+            height: 100vh;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+            scroll-behavior: smooth;
+        }
+
+        /* Background Ticker (Top) */
+        .ticker-tape {
+            position: absolute;
+            width: 200vw; height: 40px;
+            background: var(--silver);
+            color: var(--black-bg);
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.8rem;
+            line-height: 40px;
+            transform: rotate(-5deg) translateY(-100%);
+            top: 20%; left: -50vw;
+            z-index: -1;
+            white-space: nowrap;
+            overflow: hidden;
+            display: flex;
+            opacity: 0.5;
+        }
+
+        /* BOTTOM TICKER (The Requested One) */
+        .bottom-ticker-fixed {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            height: 50px;
+            background: var(--red-p5);
+            color: white;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem;
+            border-top: 4px solid white;
+            box-shadow: 0 -10px 20px rgba(229, 0, 0, 0.4);
+        }
+
+        .ticker-wrap {
+            display: flex;
+            white-space: nowrap;
+            animation: ticker-move 15s linear infinite;
+        }
+
+        @keyframes ticker-move {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        /* Rotating Stars */
+        .star-container {
+            position: absolute;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .rotating-star {
+            width: 60px;
+            height: 60px;
+            background: var(--red-p5);
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+            animation: star-spin 8s linear infinite;
+            filter: drop-shadow(4px 4px 0px white);
+        }
+
+        @keyframes star-spin { 100% { transform: rotate(360deg); } }
+
+        /* Sidebar Nav */
+        nav {
+            position: fixed;
+            top: 0; left: 0;
+            height: 100vh; width: 280px;
+            background: var(--dark-grey);
+            clip-path: polygon(0 0, 100% 0, 85% 100%, 0% 100%);
+            display: flex; flex-direction: column; justify-content: center;
+            padding-left: 2rem; z-index: 100;
+            border-right: 8px solid var(--silver);
+        }
+
+        nav h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 4.5rem; color: var(--white-text);
+            text-shadow: 4px 4px 0px var(--red-p5);
+            transform: skewX(-10deg) rotate(-5deg);
+        }
+
+        nav a {
+            color: var(--silver); text-decoration: none; font-size: 1.3rem;
+            font-weight: 900; margin: 1rem 0; text-transform: uppercase;
+            transition: 0.3s; width: fit-content;
+        }
+
+        nav a:hover {
+            color: var(--white-text); transform: translateX(15px) skewX(-10deg);
+            text-shadow: 2px 2px 0 var(--red-p5);
+        }
+
+        /* Sections */
+        section {
+            height: 100vh; width: 100vw;
+            padding-left: 320px;
+            display: flex; flex-direction: column; justify-content: center;
+            scroll-snap-align: start; position: relative;
+        }
+
+        h2.section-title {
+            font-family: 'Bebas Neue', sans-serif; font-size: 6rem;
+            transform: skewX(-8deg); position: relative; display: inline-block;
+        }
+
+        h2.section-title::after {
+            content: ''; position: absolute; left: -15px; bottom: 15px;
+            width: calc(100% + 30px); height: 40%;
+            background-color: var(--red-p5); z-index: -1; transform: skewX(-15deg);
+        }
+
+        /* Art Grid */
+        .art-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px; width: 85%; max-height: 55vh; overflow-y: auto; z-index: 2;
+        }
+
+        .art-item {
+            aspect-ratio: 1/1; background: var(--dark-grey);
+            border: 3px solid var(--silver); transition: 0.3s;
+            cursor: pointer; overflow: hidden;
+            clip-path: polygon(10% 0, 100% 0, 90% 100%, 0% 100%);
+        }
+
+        .art-item img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(50%); transition: 0.4s; }
+        .art-item:hover { border-color: var(--red-p5); transform: scale(1.05) rotate(-2deg); box-shadow: 10px 10px 0 var(--red-p5); }
+        .art-item:hover img { filter: grayscale(0%); }
+
+        /* Lightbox Modal */
+        .modal {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.9);
+            z-index: 2000; justify-content: center; align-items: center;
+            backdrop-filter: blur(8px);
+        }
+
+        .modal-content {
+            position: relative; max-width: 85%; max-height: 85%;
+            border: 8px solid white; box-shadow: 15px 15px 0 var(--red-p5);
+            transform: rotate(-1deg); animation: pop 0.3s cubic-bezier(0.17, 0.89, 0.32, 1.49);
+        }
+
+        @keyframes pop { from { transform: scale(0.5) rotate(5deg); opacity: 0; } to { transform: scale(1) rotate(-1deg); opacity: 1; } }
+
+        .modal-content img { width: 100%; height: auto; display: block; }
+
+        .close-modal {
+            position: absolute; top: -30px; right: -30px;
+            background: var(--red-p5); color: white;
+            width: 60px; height: 60px; font-family: 'Bebas Neue', sans-serif;
+            font-size: 3rem; display: flex; justify-content: center; align-items: center;
+            cursor: pointer; transform: rotate(15deg); border: 4px solid white;
+            transition: 0.2s; box-shadow: 5px 5px 0 black;
+        }
+
+        .close-modal:hover { transform: rotate(0deg) scale(1.1); background: white; color: var(--red-p5); }
+
+        /* General styles for list & boxes */
+        .info-list li { font-size: 2rem; font-weight: 900; list-style: none; margin: 1rem 0; transform: skewX(-5deg); }
+        .info-list span { color: var(--red-p5); margin-right: 10px; }
+        .info-list a { color: var(--silver); text-decoration: none; padding: 0 10px; transition: 0.3s; }
+        .info-list a:hover { background: var(--red-p5); color: white; }
+
+        /* Reveal Animation */
+        .hidden { opacity: 0; transform: translateY(30px); transition: 0.8s; }
+        .show { opacity: 1; transform: translateY(0); }
+
+    </style>
+</head>
+<body>
+
+    <!-- Bottom Ticker -->
+    <div class="bottom-ticker-fixed">
+        <div class="ticker-wrap">
+            <span>&nbsp; KINNO // STYLISH // COOL // PEAKSONA // PANTY AND STOCKING STYLE // KINNO // STYLISH // COOL // PEAKSONA // PANTY AND STOCKING STYLE // &nbsp;</span>
+            <span>&nbsp; KINNO // STYLISH // COOL // PEAKSONA // PANTY AND STOCKING STYLE // KINNO // STYLISH // COOL // PEAKSONA // PANTY AND STOCKING STYLE // &nbsp;</span>
+        </div>
+    </div>
+
+    <nav>
+        <h1>KINNO</h1>
+        <a href="#my-art">My Art</a>
+        <a href="#things-doing">Activity</a>
+        <a href="#commission">Commission</a>
+        <a href="#social-media">Social Media</a>
+    </nav>
+
+    <div class="scroll-container">
+        
+        <!-- Section 1 -->
+        <section id="my-art">
+            <div class="star-container" style="top: 10%; right: 15%;"><div class="rotating-star"></div></div>
+            <div class="star-container" style="bottom: 20%; right: 5%;"><div class="rotating-star" style="width: 40px; height: 40px; animation-duration: 5s;"></div></div>
+            
+            <h2 class="section-title hidden">PORTFOLIO</h2>
+            <div class="art-grid hidden">
+                <div class="art-item"><img src="D:\joker.webp"></div>
+                <div class="art-item"><img src="D:\pns.webp"></div>
+                <div class="art-item"><img src="D:\kei.jpg"></div>
+                <div class="art-item"><img src="D:\teto.webp"></div>
+                <div class="art-item"><img src="D:\rundy.webp"></div>
+                <div class="art-item"><img src="D:\p.webp"></div>
+                <div class="art-item"><img src="D:\njir.jpg"></div>
+                <div class="art-item"><img src="D:\nopikk.webp"></div>
+            </div>
+        </section>
+
+        <!-- Section 2 -->
+        <section id="things-doing">
+            <div class="star-container" style="top: 20%; left: 40%;"><div class="rotating-star" style="background: var(--silver);"></div></div>
+            <h2 class="section-title hidden">RECENT ACTIVITY</h2>
+            <ul class="info-list hidden">
+                <li><span>[!]</span> WORKING ON PERSONAL ART</li>
+                <li><span>[!]</span> MAKING MEMES</li>
+                <li><span>[!]</span> VOICE ACTING PRACTICE</li>
+            </ul>
+        </section>
+
+        <!-- Section 3 -->
+        <section id="commission">
+            <div class="star-container" style="bottom: 15%; right: 20%;"><div class="rotating-star"></div></div>
+            <h2 class="section-title hidden">COMMISSION ME</h2>
+            <div class="hidden" style="background: var(--dark-grey); padding: 2rem; border-left: 10px solid var(--red-p5); width: 60%;">
+                <p style="font-weight: 700; font-size: 1.2rem; margin-bottom: 1.5rem;">READY TO BRING YOUR IDEAS TO LIFE? COMMISSIONS OPEN VIA VGEN.</p>
+                <a href="https://vgen.co/Kinno_arts" target="_blank" style="background: var(--red-p5); color: white; padding: 10px 30px; text-decoration: none; font-weight: 900; font-family: 'Bebas Neue'; font-size: 1.5rem; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0% 100%); display: inline-block;">OPEN VGEN</a>
+            </div>
+        </section>
+
+        <!-- Section 4 -->
+        <section id="social-media">
+            <div class="star-container" style="top: 10%; right: 10%;"><div class="rotating-star"></div></div>
+            <h2 class="section-title hidden">GET IN TOUCH</h2>
+            <ul class="info-list hidden">
+                <li><span>IG:</span> <a href="https://instagram.com/kinno_arts" target="_blank">@KINNO_ARTS</a></li>
+                <li><span>VA:</span> <a href="https://instagram.com/kinno_no" target="_blank">@KINNO_NO</a></li>
+            </ul>
+        </section>
+    </div>
+
+    <!-- Lightbox Modal -->
+    <div id="imgModal" class="modal">
+        <div class="modal-content">
+            <div class="close-modal" id="closeX">X</div>
+            <img id="fullImg" src="">
+        </div>
+    </div>
+
+    <script>
+        // Reveal elements on scroll
+        const obs = new IntersectionObserver((entries) => {
+            entries.forEach(e => {
+                if(e.isIntersecting) e.target.classList.add('show');
+                else e.target.classList.remove('show');
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.hidden').forEach(el => obs.observe(el));
+
+        // Lightbox Logic
+        const modal = document.getElementById("imgModal");
+        const fullImg = document.getElementById("fullImg");
+        const closeX = document.getElementById("closeX");
+
+        document.querySelectorAll('.art-item img').forEach(img => {
+            img.onclick = () => {
+                modal.style.display = "flex";
+                fullImg.src = img.src;
+            };
+        });
+
+        closeX.onclick = () => modal.style.display = "none";
+        
+        window.onclick = (e) => {
+            if(e.target == modal) modal.style.display = "none";
+        }
+    </script>
+</body>
+</html>
+<style>
+    /* Import Font yang mirip ZZZ (Kombinasi Teknis dan Tebal) */
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Space+Mono:wght@700&display=swap');
+
+    /* Container Ticker CRT */
+    .bottom-ticker-fixed {
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        height: 60px;
+        background: #000000; /* Hitam CRT */
+        border-top: 2px solid #333;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        /* Efek lengkungan kaca CRT */
+        box-shadow: inset 0 5px 15px rgba(0,0,0,1), 0 -2px 10px rgba(255,255,255,0.05);
+    }
+
+    /* Efek Tekstur Scanline CRT Spesifik untuk Bar Ticker */
+    .bottom-ticker-fixed::before {
+        content: " ";
+        display: block;
+        position: absolute;
+        top: 0; left: 0; bottom: 0; right: 0;
+        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.4) 50%);
+        background-size: 100% 4px;
+        z-index: 2;
+        pointer-events: none;
+    }
+
+    .ticker-wrap {
+        display: flex;
+        white-space: nowrap;
+        animation: ticker-move 20s linear infinite;
+        filter: blur(0.4px); /* Memberikan kesan layar tabung agak blur */
+    }
+
+    .ticker-wrap span {
+        font-family: 'Orbitron', sans-serif; /* Font bergaya futuristik/ZZZ */
+        font-size: 1.8rem;
+        color: #ffffff;
+        text-transform: uppercase;
+        letter-spacing: 4px;
+        padding-right: 50px;
+        display: flex;
+        align-items: center;
+        /* Efek Glow Putih Tipis ala Phosphor TV */
+        text-shadow: 0 0 5px rgba(255,255,255,0.7), 2px 0 2px rgba(255,0,0,0.5), -2px 0 2px rgba(0,255,255,0.5);
+        animation: crt-flicker 0.15s infinite;
+    }
+
+    /* Animasi Teks Berjalan */
+    @keyframes ticker-move {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+    }
+
+    /* Animasi Flicker CRT (Geter-geter dikit) */
+    @keyframes crt-flicker {
+        0% { opacity: 0.98; transform: skewX(0deg); }
+        50% { opacity: 1; transform: skewX(0.2deg); }
+        100% { opacity: 0.99; transform: skewX(-0.1deg); }
+    }
+
+    /* Glitch kecil sesekali */
+    .ticker-wrap:hover {
+        animation-play-state: paused;
+        filter: hue-rotate(90deg) contrast(150%);
+    }
+</style>
+<div class="bottom-ticker-fixed">
+    <div class="ticker-wrap">
+        <span>KINNO // STYLISH // COOL // PEAKSONA // PANTY AND STOCKING STYLE // KEMREN BINGITZ // KINNO // STYLISH // COOL // PEAKSONA // PANTY AND STOCKING STYLE // KEMREN BINGITZ //</span>
+        <span>KINNO // STYLISH // COOL // PEAKSONA // PANTY AND STOCKING STYLE // KEMREN BINGITZ // KINNO // STYLISH // COOL // PEAKSONA // PANTY AND STOCKING STYLE // KEMREN BINGITZ //</span>
+    </div>
+</div>
